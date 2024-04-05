@@ -11,6 +11,8 @@ Route::get('/user', function (Request $request) {
 Route::prefix("v1")->group(function () {
     Route::post("login", [AuthController::class, "login"]);
     Route::post("signup", [AuthController::class, "signUp"]);
+    Route::post("change-password", [AuthController::class, "changePassword"]);
+    Route::post("password-reset", [AuthController::class, "passwordReset"]);
     Route::post("verify-otp", [AuthController::class, "verifyOtp"]);
     Route::post("send-otp", [AuthController::class, "sendOtp"]);
 });
