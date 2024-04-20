@@ -75,6 +75,7 @@ class AuthController extends Controller
         $otp = rand(100000, 999999);
         Cache::put('otp_' . $request->input('phone'), $otp, now()->addMinutes(6));
 
+        //TODO::Send email notification with OTP to the user.
         $msg = <<<MSG
             Your OTP code is {$otp}
             MSG;

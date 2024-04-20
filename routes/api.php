@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\RegionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -15,4 +16,6 @@ Route::prefix("v1")->group(function () {
     Route::post("password-reset", [AuthController::class, "passwordReset"]);
     Route::post("verify-otp", [AuthController::class, "verifyOtp"]);
     Route::post("send-otp", [AuthController::class, "sendOtp"]);
+
+    Route::get("regions", [RegionController::class, "fetchRegions"]);
 });
