@@ -5,18 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Cities extends Model
+class SubCategories extends Model
 {
     use HasFactory;
 
-    protected $table = "cities";
+    protected $table = "sub_categories";
     protected $primaryKey = "id";
     public $incrementing = false;
     protected $hidden = [
-        'id',
+        'category_id'
     ];
-    public function regions()
+    public function categories()
     {
-        return $this->belongsTo(Regions::class); 
+        return $this->belongsTo(Categories::class); 
     }
 }

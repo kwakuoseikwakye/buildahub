@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\RegionController;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ConditionController;
+use App\Http\Controllers\Api\PlanController;
+use App\Http\Controllers\Api\RegionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -18,4 +21,7 @@ Route::prefix("v1")->group(function () {
     Route::post("send-otp", [AuthController::class, "sendOtp"]);
 
     Route::get("regions", [RegionController::class, "fetchRegions"]);
+    Route::get("plans", [PlanController::class, "fetchPlans"]);
+    Route::get("conditions", [ConditionController::class, "fetchConditions"]);
+    Route::get("categories", [CategoryController::class, "fetchCategories"]);
 });
