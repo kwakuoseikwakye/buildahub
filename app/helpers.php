@@ -40,7 +40,7 @@ if (!function_exists('validationResponse')) {
       }
 }
 
-if (!function_exists('validationResponse')) {
+if (!function_exists('extractUserToken')) {
       function extractUserToken(Request $request)
       {
             $token = $request->bearerToken();

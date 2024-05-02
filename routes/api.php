@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AdsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ConditionController;
@@ -24,4 +25,12 @@ Route::prefix("v1")->group(function () {
     Route::get("plans", [PlanController::class, "fetchPlans"]);
     Route::get("conditions", [ConditionController::class, "fetchConditions"]);
     Route::get("categories", [CategoryController::class, "fetchCategories"]);
+
+    Route::prefix("ads")->group(function () {
+        Route::get("/{categoryid}/category", [AdsController::class, "fetchAdsCategory"]); 
+        Route::post("/", [AdsController::class, "store"]);
+        Route::get("/", [AdsController::class, "fetchAds"]);
+        Route::get("/user", [AdsController::class, "fetchUserAds"]);
+        Route::get("/trending", [AdsController::class, "fetchTrendingAds"]);
+    });
 });

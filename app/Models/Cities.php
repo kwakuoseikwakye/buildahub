@@ -12,11 +12,11 @@ class Cities extends Model
     protected $table = "cities";
     protected $primaryKey = "id";
     public $incrementing = false;
-    protected $hidden = [
-        'id',
-    ];
+    // protected $hidden = [
+    //     'id',
+    // ];
     public function regions()
     {
-        return $this->belongsTo(Regions::class); 
+        return $this->belongsTo(Regions::class, 'region_code', 'code');
     }
 }

@@ -5,18 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Plans extends Model
+class AdsImage extends Model
 {
     use HasFactory;
-
-    const PREMIUM = 'PLP';
-    const STANDARD = 'STD';
-    const BASIC = 'BSC';
-
-    protected $table = "plans";
+    protected $table = "ads_images";
     protected $primaryKey = "id";
     public $incrementing = false;
+    protected $fillable = [
+        'image','ads_id'
+    ];
     protected $hidden = [
-        'id','created_at'
+        'created_at','updated_at','id' 
     ];
 }
