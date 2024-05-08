@@ -28,9 +28,10 @@ Route::prefix("v1")->group(function () {
 
     Route::prefix("ads")->group(function () {
         Route::get("/{categoryid}/category", [AdsController::class, "fetchAdsCategory"]); 
-        Route::post("/", [AdsController::class, "store"]);
         Route::get("/", [AdsController::class, "fetchAds"]);
         Route::get("/user", [AdsController::class, "fetchUserAds"]);
         Route::get("/trending", [AdsController::class, "fetchTrendingAds"]);
+        Route::post("/", [AdsController::class, "store"]);
+        Route::post("/view", [AdsController::class, "addView"]);
     });
 });

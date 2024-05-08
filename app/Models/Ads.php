@@ -13,7 +13,8 @@ class Ads extends Model
     protected $primaryKey = "id";
     public $incrementing = false;
     protected $fillable = [
-        'model_id', 'user_id', 'item_name', 'category_id', 'city_id', 'condition_code', 'description', 'phone', 'plan_code'
+        'model_id', 'user_id', 'item_name', 'category_id', 'city_id', 'condition_code', 
+        'description', 'phone', 'plan_code','amount'
     ];
     protected $hidden = [
         'created_at', 'updated_at', 'id'

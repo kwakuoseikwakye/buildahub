@@ -109,6 +109,7 @@ class AdsController extends Controller
 
     public function store(Request $request)
     {
+        return $request->plan_code;
         try {
             $validator = Validator::make($request->all(), [
                 "item_name" => "required|string|max:50",
@@ -163,6 +164,26 @@ class AdsController extends Controller
             return apiResponse('success', 'Ad created successfully', null, 201);
         } catch (\Throwable $e) {
             return internalServerErrorResponse("adding ads failed", $e);
+        }
+    }
+
+    public function addView(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                "model_id" => "required|string|exists:ads,model_id",
+            ]);
+
+            if ($validator->fails()) {
+                return apiResponse('error', "Adding failed. " . join(". ", $validator->errors()->all()), null, 422);
+            }
+
+            $ad = Ads::where('model_id', $request->model_id)->firstOrFail();
+            $ad->increment('views');
+
+            return apiResponse('success', 'Ad viewed successfully', null, 201);
+        } catch (\Throwable $e) {
+            return internalServerErrorResponse("adding views failed", $e);
         }
     }
 }
