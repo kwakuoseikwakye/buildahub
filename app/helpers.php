@@ -1,12 +1,13 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 if (!function_exists('apiResponse')) {
-      function apiResponse($status, $message, $data = null, $statusCode)
+      function apiResponse($status, $message, $data = null, $statusCode) : JsonResponse
       {
             return response()->json([
                   'status' => $status,

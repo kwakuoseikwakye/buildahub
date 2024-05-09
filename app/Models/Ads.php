@@ -43,4 +43,9 @@ class Ads extends Model
     {
         return $this->belongsTo(Plans::class, 'plan_code', 'plan_code');
     }
+
+    public function favorites()
+    {
+        return $this->hasMany(Favorites::class, 'model_id', 'ads_id');
+    }
 }

@@ -33,5 +33,7 @@ Route::prefix("v1")->group(function () {
         Route::get("/trending", [AdsController::class, "fetchTrendingAds"]);
         Route::post("/", [AdsController::class, "store"]);
         Route::post("/view", [AdsController::class, "addView"]);
+        Route::delete("/{model_id}", [AdsController::class, "deleteAds"]);
+        Route::patch("/{model_id}", [AdsController::class, "update"]);
     });
 });

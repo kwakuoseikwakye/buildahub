@@ -53,8 +53,11 @@ class AdsController extends Controller
 
     public function fetchUserAds(Request $request)
     {
-        $authUserDetails = $request->authUserDetails;
-        $data = Ads::with('images', 'conditions', 'categories', 'plans', 'cities.regions')->where('user_id', $authUserDetails->user_id)->get();
+        $authUserDetails = extractUserToken($request);
+        if (empty($authUserDetails)) {
+            return apiResponse('error', 'Unauthorized - Token not provided or invalid', null, 401);
+        }
+        $data = Ads::with('images', 'conditions', 'categories', 'plans', 'cities.regions','favorites')->where('user_id', $authUserDetails->user_id)->get();
         return apiResponse('success', 'Request Successful', $data, 200);
     }
 
@@ -107,9 +110,17 @@ class AdsController extends Controller
         return apiResponse('success', 'Request Successful', $data, 200);
     }
 
+    public function getSingleAd($modelId)
+    {
+        $data = Ads::with('conditions', 'categories', 'plans', 'cities.regions', 'images')
+            ->where('model_id', $modelId)
+            ->first();
+
+        return $data;
+    }
+
     public function store(Request $request)
     {
-        return $request->plan_code;
         try {
             $validator = Validator::make($request->all(), [
                 "item_name" => "required|string|max:50",
@@ -167,6 +178,61 @@ class AdsController extends Controller
         }
     }
 
+    public function update(Request $request, $modelId)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                "item_name" => "required|string|max:50",
+                "sub_category_id" => "required|numeric|min:0",
+                "city_id" => "required|exists:cities,id",
+                "amount" => "required|numeric|min:0|max:9999999999.99",
+                "condition_code" => "required|string|max:30|exists:conditions,condition_code",
+                "phone" => "required|string|max:15",
+                "description" => "required|string|max:100",
+                "plan_code" => "string|max:30|exists:plans,plan_code",
+                'images' => 'required|array|min:2',
+                'images.*' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
+
+            if ($validator->fails()) {
+                return apiResponse('error', "Adding failed. " . join(". ", $validator->errors()->all()), null, 422);
+            }
+
+            $authUserDetails = extractUserToken($request);
+            if (empty($authUserDetails)) {
+                return apiResponse('error', 'Unauthorized - Token not provided or invalid', null, 401);
+            }
+
+            $transactionResult = DB::transaction(function () use ($request, $authUserDetails, $modelId) {
+                Ads::where('model_id', $modelId)->update([
+                    'user_id' => $authUserDetails->user_id,
+                    'item_name' => $request->item_name,
+                    'sub_category_id' => $request->sub_category_id,
+                    'city_id' => $request->city_id,
+                    'condition_code' => $request->condition_code,
+                    'phone' => $request->phone,
+                    'description' => $request->description,
+                    'plan_code' => $request->plan_code,
+                    'amount' => $request->amount,
+                ]);
+
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('images', 'public');
+                    AdsImage::where('ads_id', $modelId)->update([
+                        'image' => $path
+                    ]);
+                }
+            });
+            if (!empty($transactionResult)) {
+                throw new Exception($transactionResult);
+            }
+            $data = $this->getSingleAd($modelId);
+            return apiResponse('success', 'Ad updated successfully', $data, 202);
+        } catch (\Throwable $e) {
+            return internalServerErrorResponse("updating ads failed", $e);
+        }
+    }
+
     public function addView(Request $request)
     {
         try {
@@ -184,6 +250,26 @@ class AdsController extends Controller
             return apiResponse('success', 'Ad viewed successfully', null, 201);
         } catch (\Throwable $e) {
             return internalServerErrorResponse("adding views failed", $e);
+        }
+    }
+
+    public function deleteAds($id)
+    {
+        $ad = Ads::find($id);
+        if (!$ad) {
+            return apiResponse('error', 'Ad not found', null, 404);
+        }
+        try {
+            $transactionResult = DB::transaction(function () use ($id) {
+                Ads::where('model_id', $id)->delete();
+                AdsImage::where('ads_id', $id)->delete();
+            });
+            if (!empty($transactionResult)) {
+                throw new Exception($transactionResult);
+            }
+            return apiResponse('success', 'Ad deleted successfully', null, 200);
+        } catch (\Throwable $e) {
+            return internalServerErrorResponse(' deleting ads failed', $e);
         }
     }
 }
