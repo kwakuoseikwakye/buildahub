@@ -46,6 +46,6 @@ class Ads extends Model
 
     public function favorites()
     {
-        return $this->hasMany(Favorites::class, 'model_id', 'ads_id');
+        return $this->hasMany(Favorites::class, 'ads_id', 'model_id');
     }
 }

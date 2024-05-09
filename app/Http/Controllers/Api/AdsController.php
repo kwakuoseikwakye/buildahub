@@ -7,6 +7,7 @@ use App\Http\Resources\Api\AdsResource;
 use App\Http\Resources\Api\ImageResource;
 use App\Models\Ads;
 use App\Models\AdsImage;
+use App\Models\Favorites;
 use App\Models\Plans;
 use Exception;
 use Illuminate\Http\Request;
@@ -57,7 +58,26 @@ class AdsController extends Controller
         if (empty($authUserDetails)) {
             return apiResponse('error', 'Unauthorized - Token not provided or invalid', null, 401);
         }
-        $data = Ads::with('images', 'conditions', 'categories', 'plans', 'cities.regions','favorites')->where('user_id', $authUserDetails->user_id)->get();
+        $ads = Ads::with('images', 'conditions', 'categories', 'plans', 'cities.regions')->where('user_id', $authUserDetails->user_id)->get();
+        $data = AdsResource::collection($ads);
+
+        return apiResponse('success', 'Request Successful', $data, 200);
+    }
+
+    public function getUserBookmarkAds(Request $request)
+    {
+        $authUserDetails = extractUserToken($request);
+        if (empty($authUserDetails)) {
+            return apiResponse('error', 'Unauthorized - Token not provided or invalid', null, 401);
+        }
+        $ads = Ads::with('images', 'conditions', 'categories', 'plans', 'cities.regions', 'favorites')
+            ->whereHas('favorites', function ($query) use ($authUserDetails) {
+                $query->where('user_id', $authUserDetails->user_id);
+            })
+            ->where('user_id', $authUserDetails->user_id) 
+            ->get();
+
+        $data = AdsResource::collection($ads);
         return apiResponse('success', 'Request Successful', $data, 200);
     }
 
@@ -270,6 +290,46 @@ class AdsController extends Controller
             return apiResponse('success', 'Ad deleted successfully', null, 200);
         } catch (\Throwable $e) {
             return internalServerErrorResponse(' deleting ads failed', $e);
+        }
+    }
+
+    public function addBookmark(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                "model_id" => "required|string|max:50"
+            ]);
+
+            if ($validator->fails()) {
+                return apiResponse('error', "Adding failed. " . join(". ", $validator->errors()->all()), null, 422);
+            }
+
+            $authUserDetails = extractUserToken($request);
+            if (empty($authUserDetails)) {
+                return apiResponse('error', 'Unauthorized - Token not provided or invalid', null, 401);
+            }
+
+            Favorites::updateOrCreate(
+                ['user_id' => $authUserDetails->user_id, 'ads_id' => $request->model_id],
+                ['user_id' => $authUserDetails->user_id, 'ads_id' => $request->model_id]
+            );
+            return apiResponse('success', 'Bookmarked successfully', null, 201);
+        } catch (\Throwable $e) {
+            return internalServerErrorResponse("adding favorite failed", $e);
+        }
+    }
+
+    public function deleteBookmark(Request $request, $modelId)
+    {
+        $authUserDetails = extractUserToken($request);
+        if (empty($authUserDetails)) {
+            return apiResponse('error', 'Unauthorized - Token not provided or invalid', null, 401);
+        }
+        try {
+            Favorites::where('ads_id', $modelId)->where('user_id', $authUserDetails->user_id)->delete();
+            return apiResponse('success', 'Favourite deleted successfully', null, 200);
+        } catch (\Throwable $e) {
+            return internalServerErrorResponse(' deleting fav failed', $e);
         }
     }
 }

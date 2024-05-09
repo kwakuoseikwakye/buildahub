@@ -31,9 +31,12 @@ Route::prefix("v1")->group(function () {
         Route::get("/", [AdsController::class, "fetchAds"]);
         Route::get("/user", [AdsController::class, "fetchUserAds"]);
         Route::get("/trending", [AdsController::class, "fetchTrendingAds"]);
+        Route::get("/user-favorites", [AdsController::class, "getUserBookmarkAds"]);
         Route::post("/", [AdsController::class, "store"]);
-        Route::post("/view", [AdsController::class, "addView"]);
-        Route::delete("/{model_id}", [AdsController::class, "deleteAds"]);
         Route::patch("/{model_id}", [AdsController::class, "update"]);
+        Route::post("/view", [AdsController::class, "addView"]);
+        Route::post("/add-favorite", [AdsController::class, "addBookmark"]);
+        Route::delete("/delete-favorite/{model_id}", [AdsController::class, "deleteBookmark"]);
+        Route::delete("/{model_id}", [AdsController::class, "deleteAds"]);
     });
 });
