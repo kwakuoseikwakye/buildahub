@@ -77,7 +77,7 @@ class AuthController extends Controller
 
         //TODO::Send email notification with OTP to the user.
         $msg = <<<MSG
-            Your One-Time-Password is {$otp} if you did not initiate this request kindly ignore this message
+            Your verification code is {$otp} if you did not initiate this request kindly ignore this message
             MSG;
 
         $sms = new Sms(env('ARKESEL_SMS_ID'), env('ARKESEL_SMS_API_KEY'));

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api;
 
+use App\Models\Favorites;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,11 +15,13 @@ class AdsResource extends JsonResource
      */
     public function toArray($request)
     {
+        $bookmarked = Favorites::where('ads_id', $this->model_id)->exists();
         return [
             'model_id' => $this->model_id,
             'user_id' => $this->user_id,
             'item_name' => $this->item_name,
             'amount' => $this->amount,
+            'bookmarked' => ($bookmarked) ? true : false,
             'sub_category_id' => $this->sub_category_id,
             'city_id' => $this->city_id,
             'condition_code' => $this->condition_code,

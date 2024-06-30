@@ -9,6 +9,7 @@ use App\Models\Ads;
 use App\Models\AdsImage;
 use App\Models\Favorites;
 use App\Models\Plans;
+use App\Models\Reviews;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,13 +20,6 @@ use Illuminate\Routing\Controllers\Middleware;
 class AdsController extends Controller
 // implements \Illuminate\Routing\Controllers\HasMiddleware
 {
-    // public static function middleware(): array
-    // {
-    //     return [
-    //         new Middleware(middleware: 'checkUserToken'),
-    //     ];
-    // }
-
     public function fetchAds(Request $request)
     {
         $premiumAds = Ads::with('conditions', 'categories', 'plans', 'cities.regions', 'images')
@@ -74,7 +68,7 @@ class AdsController extends Controller
             ->whereHas('favorites', function ($query) use ($authUserDetails) {
                 $query->where('user_id', $authUserDetails->user_id);
             })
-            ->where('user_id', $authUserDetails->user_id) 
+            ->where('user_id', $authUserDetails->user_id)
             ->get();
 
         $data = AdsResource::collection($ads);
@@ -210,8 +204,8 @@ class AdsController extends Controller
                 "phone" => "required|string|max:15",
                 "description" => "required|string|max:100",
                 "plan_code" => "string|max:30|exists:plans,plan_code",
-                'images' => 'required|array|min:2',
-                'images.*' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+                // 'images' => 'required|array|min:2',
+                // 'images.*' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
             if ($validator->fails()) {
@@ -236,12 +230,12 @@ class AdsController extends Controller
                     'amount' => $request->amount,
                 ]);
 
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('images', 'public');
-                    AdsImage::where('ads_id', $modelId)->update([
-                        'image' => $path
-                    ]);
-                }
+                // foreach ($request->file('images') as $image) {
+                //     $path = $image->store('images', 'public');
+                //     AdsImage::where('ads_id', $modelId)->update([
+                //         'image' => $path
+                //     ]);
+                // }
             });
             if (!empty($transactionResult)) {
                 throw new Exception($transactionResult);
@@ -273,6 +267,36 @@ class AdsController extends Controller
         }
     }
 
+    public function addReview(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                "ads_id" => "required|string|max:50",
+                "rating" => "required|numeric|max:5|min:1",
+                "message" => "required|string|max:255"
+            ]);
+
+            if ($validator->fails()) {
+                return apiResponse('error', "Adding failed. " . join(". ", $validator->errors()->all()), null, 422);
+            }
+
+            $authUserDetails = extractUserToken($request);
+            if (empty($authUserDetails)) {
+                return apiResponse('error', 'Unauthorized - Token not provided or invalid', null, 401);
+            }
+
+            Reviews::create([
+                'user_id' => $authUserDetails->user_id,
+                'ads_id' => $request->ads_id,
+                'message' => $request->message,
+                'rating' => $request->rating,
+            ]);
+            return apiResponse('success', 'Review added successfully', null, 201);
+        } catch (\Throwable $e) {
+            return internalServerErrorResponse("adding review failed", $e);
+        }
+    }
+
     public function deleteAds($id)
     {
         $ad = Ads::find($id);
@@ -297,7 +321,7 @@ class AdsController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                "model_id" => "required|string|max:50"
+                "model_id" => "required|string|max:50|exists:ads,model_id"
             ]);
 
             if ($validator->fails()) {
@@ -309,9 +333,14 @@ class AdsController extends Controller
                 return apiResponse('error', 'Unauthorized - Token not provided or invalid', null, 401);
             }
 
+            // Favorites::updateOrCreate(
+            //     ['user_id' => $authUserDetails->user_id, 'ads_id' => $request->model_id],
+            //     ['user_id' => $authUserDetails->user_id, 'ads_id' => $request->model_id]
+            // );
+
             Favorites::updateOrCreate(
                 ['user_id' => $authUserDetails->user_id, 'ads_id' => $request->model_id],
-                ['user_id' => $authUserDetails->user_id, 'ads_id' => $request->model_id]
+                []  // No need to specify the same fields again in the second array
             );
             return apiResponse('success', 'Bookmarked successfully', null, 201);
         } catch (\Throwable $e) {
