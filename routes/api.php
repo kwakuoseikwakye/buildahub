@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ConditionController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\RegionController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -22,11 +23,12 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post("send-otp", [AuthController::class, "sendOtp"]);
 });
 
-Route::group(['prefix' => 'v1', 'middleware' => 'auth:sanctum'], function () {
+Route::group(['prefix' => 'v1', 'middleware' => 'check-user-authentication'], function () {
     Route::get("regions", [RegionController::class, "fetchRegions"]);
     Route::get("plans", [PlanController::class, "fetchPlans"]);
     Route::get("conditions", [ConditionController::class, "fetchConditions"]);
     Route::get("categories", [CategoryController::class, "fetchCategories"]);
+    Route::delete('user', [UserController::class, 'destroy']);
 
     Route::prefix("ads")->group(function () {
         Route::get("/{categoryid}/category", [AdsController::class, "fetchAdsCategory"]); 
