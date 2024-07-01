@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\checkUserToken;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +13,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->appendToGroup('check-user-authentication', [
+            checkUserToken::class,
+        ]);
+        // $middleware->api(prepend: [
+        //     'checkUserToken' => checkUserToken::class,
+        // ]);
+        // $middleware->api(append: [
+        //     'checkUserToken' => \App\Http\Middleware\checkUserToken::class,
+        // ]); 
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
