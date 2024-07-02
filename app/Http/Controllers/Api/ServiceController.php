@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\ServicesResource;
 use App\Models\ArtisanServices;
+use App\Models\Plans;
 use App\Models\ServiceImage;
 use Exception;
 use Illuminate\Http\Request;
@@ -17,6 +19,32 @@ class ServiceController extends Controller
     public function __construct(Request $request)
     {
         $this->request = $request;
+    }
+
+    public function fetchServices()
+    {
+        $premiumAds = ArtisanServices::with('categories', 'plans', 'cities.regions', 'images')
+            ->where('plan_code', Plans::PREMIUM)
+            ->orderByDesc('views')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $standardAds = ArtisanServices::with('categories', 'plans', 'cities.regions', 'images')
+            ->where('plan_code', Plans::STANDARD)
+            ->orderByDesc('created_at')
+            ->orderByDesc('views')
+            ->get();
+
+        $basicAds = ArtisanServices::with('categories', 'plans', 'cities.regions', 'images')
+            ->where('plan_code', Plans::BASIC)
+            ->orderByDesc('created_at')
+            ->orderByDesc('views')
+            ->get();
+
+        $ads = $premiumAds->merge($standardAds)->merge($basicAds);
+        $data = ServicesResource::collection($ads);
+
+        return apiResponse('success', 'Request Successful', $data, 200);
     }
 
     public function store(Request $request)
