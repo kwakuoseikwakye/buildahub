@@ -47,10 +47,19 @@ class ServiceController extends Controller
         return apiResponse('success', 'Request Successful', $data, 200);
     }
 
-    public function store(Request $request)
+    public function getSingleService($modelId)
+    {
+        $data = ArtisanServices::with('categories', 'plans', 'cities.regions', 'images')
+            ->where('model_id', $modelId)
+            ->first();
+
+        return $data;
+    }
+
+    public function store()
     {
         try {
-            $validator = Validator::make($request->all(), [
+            $validator = Validator::make($this->request->all(), [
                 "service_category_id" => "required|numeric|min:0",
                 "city_id" => "required|exists:cities,id",
                 "amount" => "required|numeric|min:0|max:9999999999.99",
@@ -65,21 +74,21 @@ class ServiceController extends Controller
                 return apiResponse('error', "Adding failed. " . join(". ", $validator->errors()->all()), null, 422);
             }
 
-            $authUserDetails = extractUserToken($request);
+            $authUserDetails = extractUserToken($this->request);
 
-            $transactionResult = DB::transaction(function () use ($request, $authUserDetails) {
+            $transactionResult = DB::transaction(function () use ($authUserDetails) {
                 $service = new ArtisanServices();
                 $service->model_id = bin2hex(random_bytes(5));
                 $service->user_id = $authUserDetails->user_id;
-                $service->service_category_id = $request->service_category_id;
-                $service->city_id = $request->city_id;
-                $service->phone = $request->phone;
-                $service->description = $request->description;
-                $service->plan_code = $request->plan_code;
-                $service->amount = $request->amount;
+                $service->service_category_id = $this->request->service_category_id;
+                $service->city_id = $this->request->city_id;
+                $service->phone = $this->request->phone;
+                $service->description = $this->request->description;
+                $service->plan_code = $this->request->plan_code;
+                $service->amount = $this->request->amount;
 
                 if ($service->save()) {
-                    foreach ($request->file('images') as $image) {
+                    foreach ($this->request->file('images') as $image) {
                         $path = $image->store('images', 'public');
                         $serviceImage = new ServiceImage();
                         $serviceImage->services_id = $service->model_id;
@@ -96,6 +105,45 @@ class ServiceController extends Controller
             return apiResponse('success', 'Service created successfully', null, 201);
         } catch (\Throwable $e) {
             return internalServerErrorResponse("adding service failed", $e);
+        }
+    }
+
+    public function update($modelId)
+    {
+        try {
+            $validator = Validator::make($this->request->all(), [
+                "service_category_id" => "required|numeric|min:0",
+                "city_id" => "required|exists:cities,id",
+                "amount" => "required|numeric|min:0|max:9999999999.99",
+                "phone" => "required|string|max:15",
+                "description" => "required|string|max:100",
+                "plan_code" => "string|max:30|exists:plans,plan_code",
+            ]);
+
+            if ($validator->fails()) {
+                return apiResponse('error', "Updating failed. " . join(". ", $validator->errors()->all()), null, 422);
+            }
+
+            $authUserDetails = extractUserToken($this->request);
+
+            $transactionResult = DB::transaction(function () use ($authUserDetails, $modelId) {
+                ArtisanServices::where('model_id', $modelId)->update([
+                    'user_id' => $authUserDetails->user_id,
+                    'service_category_id' => $this->request->service_category_id,
+                    'city_id' => $this->request->city_id,
+                    'phone' => $this->request->phone,
+                    'description' => $this->request->description,
+                    'plan_code' => $this->request->plan_code,
+                    'amount' => $this->request->amount,
+                ]);
+            });
+            if (!empty($transactionResult)) {
+                throw new Exception($transactionResult);
+            }
+            $data = $this->getSingleService($modelId);
+            return apiResponse('success', 'Service updated successfully', $data, 202);
+        } catch (\Throwable $e) {
+            return internalServerErrorResponse("updating service failed", $e);
         }
     }
 }

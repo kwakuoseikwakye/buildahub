@@ -49,5 +49,6 @@ Route::group(['prefix' => 'v1', 'middleware' => 'check-user-authentication'], fu
     Route::prefix("services")->group(function () {
         Route::post("/", [ServiceController::class, "store"]);
         Route::get("/", [ServiceController::class, "fetchServices"]);
+        Route::patch("/{modelId}", [ServiceController::class, "update"]);
     });
 });
