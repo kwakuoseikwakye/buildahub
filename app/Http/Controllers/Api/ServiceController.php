@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\ServicesResource;
 use App\Models\ArtisanServices;
 use App\Models\Plans;
+use App\Models\ServiceCategory;
 use App\Models\ServiceImage;
 use Exception;
 use Illuminate\Http\Request;
@@ -19,6 +20,12 @@ class ServiceController extends Controller
     public function __construct(Request $request)
     {
         $this->request = $request;
+    }
+
+    public function fetchServicesCategories()
+    {
+        $services = ServiceCategory::get();
+        return apiResponse('success', 'Request successful', $services, 200);
     }
 
     public function fetchServices()
