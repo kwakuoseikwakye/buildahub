@@ -143,7 +143,7 @@ class AdsController extends Controller
                 "amount" => "required|numeric|min:0|max:9999999999.99",
                 "condition_code" => "required|string|max:30|exists:conditions,condition_code",
                 "phone" => "required|string|max:15",
-                "description" => "required|string|max:100",
+                "description" => "required|string|max:255",
                 "plan_code" => "string|max:30|exists:plans,plan_code",
                 'images' => 'required|array|min:2',
                 'images.*' => 'required|image|mimes:jpeg,png,jpg|max:2048',
@@ -299,7 +299,7 @@ class AdsController extends Controller
 
     public function deleteAds($id)
     {
-        $ad = Ads::find($id);
+        $ad = Ads::where('model_id', $id)->exists();
         if (!$ad) {
             return apiResponse('error', 'Ad not found', null, 404);
         }

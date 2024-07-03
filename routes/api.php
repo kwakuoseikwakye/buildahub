@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ConditionController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\RegionController;
+use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -43,5 +44,12 @@ Route::group(['prefix' => 'v1', 'middleware' => 'check-user-authentication'], fu
         Route::post("/add-review", [AdsController::class, "addReview"]);
         Route::delete("/delete-favorite/{model_id}", [AdsController::class, "deleteBookmark"]);
         Route::delete("/{model_id}", [AdsController::class, "deleteAds"]);
+    });
+
+    Route::prefix("services")->group(function () {
+        Route::post("/", [ServiceController::class, "store"]);
+        Route::get("/", [ServiceController::class, "fetchServices"]);
+        Route::get("/categories", [ServiceController::class, "fetchServicesCategories"]);
+        Route::patch("/{modelId}", [ServiceController::class, "update"]);
     });
 });
