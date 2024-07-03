@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AdsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ConditionController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\RegionController;
 use App\Http\Controllers\Api\ServiceController;
@@ -51,5 +52,10 @@ Route::group(['prefix' => 'v1', 'middleware' => 'check-user-authentication'], fu
         Route::get("/", [ServiceController::class, "fetchServices"]);
         Route::get("/categories", [ServiceController::class, "fetchServicesCategories"]);
         Route::patch("/{modelId}", [ServiceController::class, "update"]);
+    });
+
+    Route::prefix("payments")->group(function () {
+        Route::post("/initiate", [PaymentController::class, "initiatePayment"]);
+        Route::patch("/verify/{transid}", [PaymentController::class, "verifyPayment"]);
     });
 });

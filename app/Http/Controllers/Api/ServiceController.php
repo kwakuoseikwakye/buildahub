@@ -83,34 +83,29 @@ class ServiceController extends Controller
 
             $authUserDetails = extractUserToken($this->request);
 
-            $transactionResult = DB::transaction(function () use ($authUserDetails) {
-                $service = new ArtisanServices();
-                $service->model_id = bin2hex(random_bytes(5));
-                $service->user_id = $authUserDetails->user_id;
-                $service->service_category_id = $this->request->service_category_id;
-                $service->city_id = $this->request->city_id;
-                $service->phone = $this->request->phone;
-                $service->description = $this->request->description;
-                $service->plan_code = $this->request->plan_code;
-                $service->amount = $this->request->amount;
+            DB::transaction();
+            $service = ArtisanServices::create([
+                'service_category_id' => $this->request->service_category_id,
+                'city_id' => $this->request->city_id,
+                'amount' => $this->request->amount,
+                'phone' => $this->request->phone,
+                'description' => $this->request->description,
+                'plan_code' => $this->request->plan_code,
+                'user_id' => $authUserDetails->user_id,
+                'model_id' => bin2hex(random_bytes(5))
+            ]);
 
-                if ($service->save()) {
-                    foreach ($this->request->file('images') as $image) {
-                        $path = $image->store('images', 'public');
-                        $serviceImage = new ServiceImage();
-                        $serviceImage->services_id = $service->model_id;
-                        $serviceImage->image = $path;
-                        $serviceImage->save();
-                    }
-                } else {
-                    return apiResponse('error', 'Failed to save service', null, 500);
-                }
-            });
-            if (!empty($transactionResult)) {
-                throw new Exception($transactionResult);
+            foreach ($this->request->file('images') as $image) {
+                $path = $image->store('images', 'public');
+                $serviceImage = new ServiceImage();
+                $serviceImage->services_id = $service->model_id;
+                $serviceImage->image = $path;
+                $serviceImage->save();
             }
-            return apiResponse('success', 'Service created successfully', null, 201);
+            DB::commit();
+            return apiResponse('success', 'Service created successfully', $service, 201);
         } catch (\Throwable $e) {
+            DB::rollBack();
             return internalServerErrorResponse("adding service failed", $e);
         }
     }
