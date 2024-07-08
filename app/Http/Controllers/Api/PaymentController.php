@@ -81,7 +81,7 @@ class PaymentController extends Controller
                 'currency' => 'GHS'
             ]);
 
-            $curl = curl_init("https://checkout-test.theteller.net/initiate");//TODO:MUST CHANGE TO LIVE URL
+            $curl = curl_init("https://checkout-test.theteller.net/initiate"); //TODO:MUST CHANGE TO LIVE URL
             curl_setopt_array($curl, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,

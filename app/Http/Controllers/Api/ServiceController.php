@@ -65,13 +65,15 @@ class ServiceController extends Controller
 
     public function store()
     {
+        // return $this->request->all();
         try {
             $validator = Validator::make($this->request->all(), [
-                "service_category_id" => "required|numeric|min:0",
+                "service_category_id" => "required|numeric|exists:service_categories,id",
                 "city_id" => "required|exists:cities,id",
-                "amount" => "required|numeric|min:0|max:9999999999.99",
+                "amount" => "required|numeric|min:1",
                 "phone" => "required|string|max:15",
-                "description" => "required|string|max:100",
+                "description" => "required|string|max:255",
+                "title" => "required|string|max:255",
                 "plan_code" => "string|max:30|exists:plans,plan_code",
                 'images' => 'required|array|min:1',
                 'images.*' => 'required|image|mimes:jpeg,png,jpg|max:2048',
@@ -83,7 +85,7 @@ class ServiceController extends Controller
 
             $authUserDetails = extractUserToken($this->request);
 
-            DB::transaction();
+            DB::beginTransaction();
             $service = ArtisanServices::create([
                 'service_category_id' => $this->request->service_category_id,
                 'city_id' => $this->request->city_id,
@@ -92,6 +94,7 @@ class ServiceController extends Controller
                 'description' => $this->request->description,
                 'plan_code' => $this->request->plan_code,
                 'user_id' => $authUserDetails->user_id,
+                'title' => $this->request->title,
                 'model_id' => bin2hex(random_bytes(5))
             ]);
 

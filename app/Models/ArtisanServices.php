@@ -17,7 +17,7 @@ class ArtisanServices extends Model
 
     protected $fillable = [
         'model_id', 'user_id', 'description', 'service_category_id', 'views',
-        'description', 'phone', 'plan_code'
+        'description', 'phone', 'plan_code','title','amount','city_id'
     ];
 
     protected $hidden = [
