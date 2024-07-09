@@ -355,8 +355,12 @@ class AdsController extends Controller
             return apiResponse('error', 'Unauthorized - Token not provided or invalid', null, 401);
         }
         try {
-            Favorites::where('ads_id', $modelId)->where('user_id', $authUserDetails->user_id)->delete();
-            return apiResponse('success', 'Favourite deleted successfully', null, 200);
+            $fav = Favorites::where('ads_id', $modelId)->where('user_id', $authUserDetails->user_id)->delete();
+            if ($fav) {
+                return apiResponse('success', 'Favourite deleted successfully', null, 200);
+            } else {
+                return apiResponse('error', 'Favourite cannot be deleted', null, 400);
+            }
         } catch (\Throwable $e) {
             return internalServerErrorResponse(' deleting fav failed', $e);
         }

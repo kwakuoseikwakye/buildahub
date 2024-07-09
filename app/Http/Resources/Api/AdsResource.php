@@ -15,10 +15,12 @@ class AdsResource extends JsonResource
      */
     public function toArray($request)
     {
-        $bookmarked = Favorites::where('ads_id', $this->model_id)->exists();
+        $authUserDetails = extractUserToken($request);
+        $bookmarked = Favorites::where('ads_id', $this->model_id)->where('user_id', $authUserDetails->user_id)->exists();
         return [
             'model_id' => $this->model_id,
             'user_id' => $this->user_id,
+            'auth_user' => $authUserDetails->user_id,
             'item_name' => $this->item_name,
             'amount' => $this->amount,
             'bookmarked' => ($bookmarked) ? true : false,

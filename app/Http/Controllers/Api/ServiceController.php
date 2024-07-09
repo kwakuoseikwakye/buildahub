@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\ServicesResource;
 use App\Models\ArtisanServices;
+use App\Models\Payment;
 use App\Models\Plans;
 use App\Models\ServiceCategory;
 use App\Models\ServiceImage;
@@ -65,7 +66,6 @@ class ServiceController extends Controller
 
     public function store()
     {
-        // return $this->request->all();
         try {
             $validator = Validator::make($this->request->all(), [
                 "service_category_id" => "required|numeric|exists:service_categories,id",
@@ -105,6 +105,9 @@ class ServiceController extends Controller
                 $serviceImage->image = $path;
                 $serviceImage->save();
             }
+
+            $this->initiatePayment($this->request->plan_code, $service->model_id, $this->request->payment_method, $authUserDetails);
+            
             DB::commit();
             return apiResponse('success', 'Service created successfully', $service, 201);
         } catch (\Throwable $e) {
@@ -149,6 +152,88 @@ class ServiceController extends Controller
             return apiResponse('success', 'Service updated successfully', $data, 202);
         } catch (\Throwable $e) {
             return internalServerErrorResponse("updating service failed", $e);
+        }
+    }
+
+    private function initiatePayment($planCode, $modelId, $paymentMethod, $user)
+    {
+        try {
+            $planAmount =  Plans::where('plan_code', $planCode)->first();
+            if (!empty($planAmount)) {
+                $amt = $planAmount->amount;
+            } else {
+                return apiResponse('error', "Plan not found", null, 404);
+            }
+
+            if ($amt < 1) {
+                return apiResponse('error', "Amount cannot be less than 1", null, 400);
+            }
+            $amount = match (true) {
+                is_numeric($amt) && ($number = (int)($amt * 100)) >= 0 && $number <= 999999999999 =>
+                str_pad($number, 12, '0', STR_PAD_LEFT),
+                is_string($amt) && strlen($amt) === 12 && ctype_digit($amt) =>
+                $amt,
+                default => '',
+            };
+
+            $transactionId = '';
+            for ($i = 0; $i < 12; $i++) {
+                $transactionId .= random_int(0, 9);
+            }
+
+            $username = env("API_USER");
+            $key = env("API_KEY");
+            $url = "https://buildahub.net";
+
+            Payment::create([
+                "transaction_id" => $transactionId,
+                "amount_paid" => $amt,
+                "order_id" => $modelId,
+                "userid" => $user->user_id,
+                "status" => Payment::PENDING,
+                "payment_mode" => "online",
+            ]);
+
+            $credentials = base64_encode($username . ':' . $key);
+            $payload = json_encode([
+                "merchant_id" => "TTM-00009286",
+                "transaction_id" => $transactionId,
+                "desc" => "Payment Using Checkout Page",
+                "amount" => $amount,
+                "redirect_url" => $url,
+                "email" => $user->email,
+                'payment_method' => $paymentMethod,
+                'currency' => 'GHS'
+            ]);
+
+            $curl = curl_init("https://checkout-test.theteller.net/initiate"); //TODO:MUST CHANGE TO LIVE URL
+            curl_setopt_array($curl, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_HTTPHEADER => [
+                    "Authorization: Basic " . $credentials,
+                    "Cache-Control: no-cache",
+                    "Content-Type: application/json",
+                ],
+                CURLOPT_POSTFIELDS => $payload,
+            ]);
+
+            $response = curl_exec($curl);
+            $err = curl_error($curl);
+
+            curl_close($curl);
+
+            if ($err) {
+                return apiResponse('error', $err, null, 400);
+            }
+
+            return apiResponse('success', 'Payment link generated successfully', json_decode($response, true), 200);
+        } catch (\Exception $e) {
+            return internalServerErrorResponse('generating payment link failed', $e);
         }
     }
 }
