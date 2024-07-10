@@ -106,10 +106,14 @@ class ServiceController extends Controller
                 $serviceImage->save();
             }
 
-            $this->initiatePayment($this->request->plan_code, $service->model_id, $this->request->payment_method, $authUserDetails);
+            $payment = $this->initiatePayment($this->request->plan_code, $service->model_id, $this->request->payment_method, $authUserDetails);
             
             DB::commit();
-            return apiResponse('success', 'Service created successfully', $service, 201);
+            $data = [
+                "service" => $service,
+                "payment_url" => $payment
+            ];
+            return apiResponse('success', 'Service created successfully', $data, 201);
         } catch (\Throwable $e) {
             DB::rollBack();
             return internalServerErrorResponse("adding service failed", $e);
@@ -124,7 +128,7 @@ class ServiceController extends Controller
                 "city_id" => "required|exists:cities,id",
                 "amount" => "required|numeric|min:0|max:9999999999.99",
                 "phone" => "required|string|max:15",
-                "description" => "required|string|max:100",
+                "description" => "required|string|max:255",
                 "plan_code" => "string|max:30|exists:plans,plan_code",
             ]);
 
@@ -231,7 +235,7 @@ class ServiceController extends Controller
                 return apiResponse('error', $err, null, 400);
             }
 
-            return apiResponse('success', 'Payment link generated successfully', json_decode($response, true), 200);
+            return json_decode($response);
         } catch (\Exception $e) {
             return internalServerErrorResponse('generating payment link failed', $e);
         }
