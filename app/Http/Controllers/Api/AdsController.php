@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\AdsResource;
 use App\Http\Resources\Api\ImageResource;
+use App\Http\Resources\Api\ReviewsResource;
 use App\Models\Ads;
 use App\Models\AdsImage;
 use App\Models\Favorites;
@@ -18,7 +19,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Routing\Controllers\Middleware;
 
 class AdsController extends Controller
-// implements \Illuminate\Routing\Controllers\HasMiddleware
 {
     public function fetchAds(Request $request)
     {
@@ -271,7 +271,7 @@ class AdsController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                "ads_id" => "required|string|max:50",
+                "ads_id" => "required|string|max:50|exists:ads,model_id",
                 "rating" => "required|numeric|max:5|min:1",
                 "message" => "required|string|max:255"
             ]);
@@ -281,8 +281,10 @@ class AdsController extends Controller
             }
 
             $authUserDetails = extractUserToken($request);
-            if (empty($authUserDetails)) {
-                return apiResponse('error', 'Unauthorized - Token not provided or invalid', null, 401);
+            $checkReviewDuplicate = Reviews::where('ads_id', $request->ads_id)->where('user_id', $authUserDetails->user_id)->exists();
+
+            if ($checkReviewDuplicate) {
+                return apiResponse('error', 'Review already added', null, 400);
             }
 
             Reviews::create([
@@ -295,6 +297,13 @@ class AdsController extends Controller
         } catch (\Throwable $e) {
             return internalServerErrorResponse("adding review failed", $e);
         }
+    }
+
+    public function getAdsReviews($modelId)
+    {
+        $reviews = Reviews::where('ads_id', $modelId)->get();
+
+        return apiResponse('success', 'Request successful', ReviewsResource::collection($reviews), 200);
     }
 
     public function deleteAds($id)

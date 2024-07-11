@@ -43,6 +43,7 @@ Route::group(['prefix' => 'v1', 'middleware' => 'check-user-authentication'], fu
         Route::post("/view", [AdsController::class, "addView"]);
         Route::post("/add-favorite", [AdsController::class, "addBookmark"]);
         Route::post("/add-review", [AdsController::class, "addReview"]);
+        Route::get("/get-reviews/{model_id}", [AdsController::class, "getAdsReviews"]);
         Route::delete("/delete-favorite/{model_id}", [AdsController::class, "deleteBookmark"]);
         Route::delete("/{model_id}", [AdsController::class, "deleteAds"]);
     });

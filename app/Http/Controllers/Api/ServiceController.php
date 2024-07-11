@@ -73,8 +73,9 @@ class ServiceController extends Controller
                 "amount" => "required|numeric|min:1",
                 "phone" => "required|string|max:15",
                 "description" => "required|string|max:255",
+                'payment_method' => 'required|in:card,momo,both',
                 "title" => "required|string|max:255",
-                "plan_code" => "string|max:30|exists:plans,plan_code",
+                "plan_code" => "required|string|max:30|exists:plans,plan_code",
                 'images' => 'required|array|min:1',
                 'images.*' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             ]);
@@ -86,6 +87,7 @@ class ServiceController extends Controller
             $authUserDetails = extractUserToken($this->request);
 
             DB::beginTransaction();
+            //TODO::CREATE A SUBSCRIPTION
             $service = ArtisanServices::create([
                 'service_category_id' => $this->request->service_category_id,
                 'city_id' => $this->request->city_id,
@@ -107,7 +109,7 @@ class ServiceController extends Controller
             }
 
             $payment = $this->initiatePayment($this->request->plan_code, $service->model_id, $this->request->payment_method, $authUserDetails);
-            
+
             DB::commit();
             $data = [
                 "service" => $service,
@@ -128,8 +130,9 @@ class ServiceController extends Controller
                 "city_id" => "required|exists:cities,id",
                 "amount" => "required|numeric|min:0|max:9999999999.99",
                 "phone" => "required|string|max:15",
+                "title" => "required|string|max:255",
                 "description" => "required|string|max:255",
-                "plan_code" => "string|max:30|exists:plans,plan_code",
+                "plan_code" => "required|string|max:30|exists:plans,plan_code",
             ]);
 
             if ($validator->fails()) {
@@ -146,6 +149,7 @@ class ServiceController extends Controller
                     'phone' => $this->request->phone,
                     'description' => $this->request->description,
                     'plan_code' => $this->request->plan_code,
+                    'title' => $this->request->title,
                     'amount' => $this->request->amount,
                 ]);
             });
